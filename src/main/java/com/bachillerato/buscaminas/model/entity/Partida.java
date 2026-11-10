@@ -1,6 +1,6 @@
-package com.bachillerato.buscaminas.modelo.entidad;
+package com.bachillerato.buscaminas.model.entity;
 
-import com.bachillerato.buscaminas.modelo.enums;
+import com.bachillerato.buscaminas.model.enums;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

@@ -1,6 +1,6 @@
-package com.bachillerato.buscaminas.repositorio;
+package com.bachillerato.buscaminas.repository;
 
-import com.bachillerato.buscaminas.modelo.entidad.Usuario;
+import com.bachillerato.buscaminas.model.entity.Usuario;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

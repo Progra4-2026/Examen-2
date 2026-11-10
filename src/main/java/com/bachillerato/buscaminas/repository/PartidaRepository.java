@@ -1,7 +1,7 @@
-package com.bachillerato.buscaminas.repositorio;
+package com.bachillerato.buscaminas.repository;
 
-import com.bachillerato.buscaminas.modelo.entidad.Partida;
-import com.bachillerato.buscaminas.modelo.enums;
+import com.bachillerato.buscaminas.model.entity.Partida;
+import com.bachillerato.buscaminas.model.enums;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
