@@ -1,4 +1,4 @@
-package com.bachillerato.buscaminas.modelo;
+package com.bachillerato.buscaminas.model;
 
 public class enums {
     public enum Nivel { PRINCIPIANTE, INTERMEDIO, EXPERTO }
