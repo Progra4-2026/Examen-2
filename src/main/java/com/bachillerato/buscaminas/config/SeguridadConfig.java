@@ -57,6 +57,9 @@ public class SeguridadConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
+                .sessionManagement(session -> session
+                        .sessionFixation(sessionFixation -> sessionFixation.migrateSession())
+                )
                 // CSRF desactivado: decisión de diseño, justificada en el README.
                 .csrf(csrf -> csrf.disable());
         return http.build();
