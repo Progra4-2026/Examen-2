@@ -113,6 +113,12 @@ body {
     opacity: 0.6;
 }
 
+.auth-ayuda {
+    margin: -8px 0 0;
+    color: var(--texto-suave);
+    font-size: 12px;
+}
+
 .auth-boton {
     font: inherit;
     font-weight: 600;
