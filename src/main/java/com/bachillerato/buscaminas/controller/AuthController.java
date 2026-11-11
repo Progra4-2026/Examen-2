@@ -50,9 +50,11 @@ public class AuthController {
     public ResponseEntity<?> registrar(@Valid @RequestBody RegistroRequest request) {
         String nombreUsuario = request.nombreUsuario().trim();
         String email = request.email().trim().toLowerCase();
+
         if (!request.contrasena().equals(request.confirmacionContrasena())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Las contraseñas no coinciden."));
         }
+
         if (usuarioRepository.existeNombreUsuario(nombreUsuario)
                 || usuarioRepository.existeEmail(email)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -66,6 +68,7 @@ public class AuthController {
         usuario.setPasswordHash(passwordEncoder.encode(request.contrasena()));
         usuario.setRol(enums.Rol.JUGADOR);
         usuario.setActivo(true);
+
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(UsuarioResponse.desde(usuarioRepository.save(usuario)));
@@ -82,24 +85,34 @@ public class AuthController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.identificador().trim(), request.contrasena()));
+                            request.identificador().trim(),
+                            request.contrasena()
+                    ));
+
             SecurityContext context = SecurityContextHolder.createEmptyContext();
+
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
+
             securityContextRepository.saveContext(context, httpRequest, httpResponse);
+
             Usuario usuario = usuarioRepository.buscarPorNombreUsuario(authentication.getName())
                     .orElseThrow(() -> new BadCredentialsException(ERROR_CREDENCIALES));
+
             return ResponseEntity.ok(UsuarioResponse.desde(usuario));
         } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", ERROR_CREDENCIALES));
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response,
-                                       Authentication authentication) {
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request, HttpServletResponse response,
+           Authentication authentication
+    ) {
         new SecurityContextLogoutHandler().logout(request, response, authentication);
         return ResponseEntity.noContent().build();
     }
