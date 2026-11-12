@@ -145,6 +145,7 @@ class PartidaServiceTest {
 
         // La cadena abrió todo lo seguro -> victoria con tiempo medido en el servidor
         assertEquals("TERMINADA", respuesta.estado());
+        assertEquals("VICTORIA", respuesta.resultado());
         assertNotNull(respuesta.tiempoMs());
         assertTrue(respuesta.estrellas() >= 1);
         assertEquals(1, respuesta.movimientos());

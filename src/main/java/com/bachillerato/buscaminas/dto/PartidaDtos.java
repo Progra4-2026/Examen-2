@@ -49,12 +49,25 @@ public final class PartidaDtos {
     public static final String MINA = "MINA";
     // Una casilla revelada se envía como su número de minas adyacentes: "0" a "8".
 
+    // Calcula el resultado de una partida (null mientras sigue EN_CURSO).
+    // Regla del proyecto: al ganar se guarda tiempo_ms; al perder, tiempo_ms queda NULL.
+    public static String resultadoDe(Partida partida) {
+        return switch (partida.getEstado()) {
+            case EN_CURSO -> null;
+            case ABANDONADA -> enums.Resultado.ABANDONADA.name();
+            case TERMINADA -> partida.getTiempoMs() != null
+                    ? enums.Resultado.VICTORIA.name()
+                    : enums.Resultado.DERROTA.name();
+        };
+    }
+
     // Estado de una partida tal como lo ve el jugador.
     // NUNCA incluye la lista de minas: solo lo que el jugador tiene derecho a ver.
     public record PartidaResponse(
             Long id,
             String nivel,
             String estado,
+            String resultado,
             int filas,
             int columnas,
             int numMinas,
@@ -80,6 +93,7 @@ public final class PartidaDtos {
                     partida.getIdPartida(),
                     partida.getNivel().name(),
                     partida.getEstado().name(),
+                    resultadoDe(partida),
                     tablero.getFilas(),
                     tablero.getColumnas(),
                     tablero.getNumMinas(),

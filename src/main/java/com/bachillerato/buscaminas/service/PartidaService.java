@@ -94,16 +94,8 @@ public class PartidaService {
     // Revela una casilla o alterna una bandera, y decide si la partida terminó.
     @Transactional
     public PartidaResponse procesarAccion(String nombreUsuario, Long idPartida, AccionRequest accion) {
-        Usuario usuario = buscarUsuario(nombreUsuario);
-
         // 1. ¿Existe? -> 404.  ¿Es suya? -> 403.
-        //    Se separan a propósito: primero se busca solo por id, y después se compara el dueño.
-        Partida partida = partidaRepository.findById(idPartida)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "La partida no existe."));
-
-        if (!partida.getUsuario().getIdUsuario().equals(usuario.getIdUsuario())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "La partida pertenece a otro usuario.");
-        }
+        Partida partida = buscarPartidaPropia(nombreUsuario, idPartida);
 
         // 2. Validaciones de la acción -> 400.
         if (partida.getEstado() != enums.EstadoPartida.EN_CURSO) {
@@ -227,6 +219,31 @@ public class PartidaService {
         if (tiempoMs <= objetivoMs) return 3;
         if (tiempoMs <= objetivoMs * 2) return 2;
         return 1;
+    }
+
+    // GET /api/partidas/{id}
+    // Detalle de una partida del usuario (normalmente una terminada, desde el historial).
+    // Pasa por el mismo filtro que todo lo demás: si la partida sigue EN_CURSO, las minas no se envían.
+    @Transactional(readOnly = true)
+    public PartidaResponse obtenerPartida(String nombreUsuario, Long idPartida) {
+        Partida partida = buscarPartidaPropia(nombreUsuario, idPartida);
+        Tablero tablero = tableroConverter.desdeJson(partida.getTablero());
+        return PartidaResponse.desde(partida, tablero);
+    }
+
+    // Busca una partida y verifica que sea del usuario de la sesión.
+    // Se separan los dos casos a propósito: primero se busca solo por id (si no existe -> 404),
+    // y después se compara el dueño (si es de otro -> 403).
+    private Partida buscarPartidaPropia(String nombreUsuario, Long idPartida) {
+        Usuario usuario = buscarUsuario(nombreUsuario);
+
+        Partida partida = partidaRepository.findById(idPartida)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "La partida no existe."));
+
+        if (!partida.getUsuario().getIdUsuario().equals(usuario.getIdUsuario())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "La partida pertenece a otro usuario.");
+        }
+        return partida;
     }
 
     private Usuario buscarUsuario(String nombreUsuario) {

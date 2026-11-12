@@ -29,4 +29,8 @@ public class enums {
     // Acciones que el jugador puede enviar a POST /api/partidas/{id}/acciones.
     // REVELAR abre una casilla; BANDERA pone o quita la bandera (alterna).
     public enum TipoAccion { REVELAR, BANDERA }
+
+    // Resultado de una partida para mostrar en el historial y en el detalle.
+    // No es una columna de la tabla: se calcula a partir de estado y tiempo_ms (ver PartidaDtos.resultadoDe).
+    public enum Resultado { VICTORIA, DERROTA, ABANDONADA }
 }

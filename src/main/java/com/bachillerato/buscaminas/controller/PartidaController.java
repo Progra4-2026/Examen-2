@@ -38,6 +38,13 @@ public class PartidaController {
         return partidaService.obtenerPartidaActual(authentication.getName());
     }
 
+    // Detalle de una partida del usuario (resultado, fechas, tablero).
+    // 200 con la partida; 403 si es de otro usuario; 404 si no existe.
+    @GetMapping("/{id}")
+    public PartidaResponse detalle(@PathVariable Long id, Authentication authentication) {
+        return partidaService.obtenerPartida(authentication.getName(), id);
+    }
+
     // Procesa una acción del jugador: revelar una casilla o alternar una bandera.
     // 200 con el estado actualizado; 400 acción inválida o partida no activa;
     // 403 partida de otro usuario; 404 partida inexistente.
