@@ -25,4 +25,8 @@ public class enums {
 
     public enum EstadoPartida { EN_CURSO, TERMINADA, ABANDONADA }
     public enum Rol {JUGADOR, ADMIN}
+
+    // Acciones que el jugador puede enviar a POST /api/partidas/{id}/acciones.
+    // REVELAR abre una casilla; BANDERA pone o quita la bandera (alterna).
+    public enum TipoAccion { REVELAR, BANDERA }
 }

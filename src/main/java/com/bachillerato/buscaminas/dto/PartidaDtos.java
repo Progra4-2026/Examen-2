@@ -30,6 +30,19 @@ public final class PartidaDtos {
             enums.Nivel nivel
     ) { }
 
+    // Body de POST /api/partidas/{id}/acciones: {"tipo": "REVELAR", "fila": 3, "columna": 5}
+    // Integer (y no int) para que @NotNull detecte cuando el campo no viene en el JSON.
+    public record AccionRequest(
+            @NotNull(message = "El tipo de acción es obligatorio")
+            enums.TipoAccion tipo,
+
+            @NotNull(message = "La fila es obligatoria")
+            Integer fila,
+
+            @NotNull(message = "La columna es obligatoria")
+            Integer columna
+    ) { }
+
     // Valores posibles de cada casilla en el tablero filtrado.
     public static final String OCULTA = "OCULTA";
     public static final String BANDERA = "BANDERA";

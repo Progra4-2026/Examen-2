@@ -1,5 +1,6 @@
 package com.bachillerato.buscaminas.service;
 
+import com.bachillerato.buscaminas.dto.PartidaDtos.AccionRequest;
 import com.bachillerato.buscaminas.dto.PartidaDtos.PartidaResponse;
 import com.bachillerato.buscaminas.excepcion.ApiException;
 import com.bachillerato.buscaminas.model.Tablero;
@@ -15,8 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 
@@ -83,6 +88,145 @@ public class PartidaService {
 
         Tablero tablero = tableroConverter.desdeJson(partida.getTablero());
         return PartidaResponse.desde(partida, tablero);
+    }
+
+    // POST /api/partidas/{id}/acciones
+    // Revela una casilla o alterna una bandera, y decide si la partida terminó.
+    @Transactional
+    public PartidaResponse procesarAccion(String nombreUsuario, Long idPartida, AccionRequest accion) {
+        Usuario usuario = buscarUsuario(nombreUsuario);
+
+        // 1. ¿Existe? -> 404.  ¿Es suya? -> 403.
+        //    Se separan a propósito: primero se busca solo por id, y después se compara el dueño.
+        Partida partida = partidaRepository.findById(idPartida)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "La partida no existe."));
+
+        if (!partida.getUsuario().getIdUsuario().equals(usuario.getIdUsuario())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "La partida pertenece a otro usuario.");
+        }
+
+        // 2. Validaciones de la acción -> 400.
+        if (partida.getEstado() != enums.EstadoPartida.EN_CURSO) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La partida ya no está activa.");
+        }
+
+        Tablero tablero = tableroConverter.desdeJson(partida.getTablero());
+        int fila = accion.fila();
+        int columna = accion.columna();
+
+        if (!tablero.dentroDelTablero(fila, columna)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La casilla está fuera del tablero.");
+        }
+        if (tablero.estaRevelada(fila, columna)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "La casilla ya está revelada.");
+        }
+
+        // 3. Ejecutar la acción.
+        if (accion.tipo() == enums.TipoAccion.BANDERA) {
+            if (tablero.tieneBandera(fila, columna)) {
+                tablero.quitarBandera(fila, columna);
+            } else {
+                tablero.ponerBandera(fila, columna);
+            }
+        } else {
+            if (tablero.tieneBandera(fila, columna)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "La casilla tiene bandera; quítala antes de revelarla.");
+            }
+
+            if (tablero.esMina(fila, columna)) {
+                tablero.revelar(fila, columna);
+                terminarPartida(partida, false);          // derrota
+            } else {
+                abrirEnCadena(tablero, fila, columna);
+                if (tablero.todasLasSegurasReveladas()) {
+                    terminarPartida(partida, true);       // victoria
+                }
+            }
+        }
+
+        // 4. Guardar. Al estar dentro de @Transactional, Hibernate también detectaría los cambios
+        //    solo (dirty checking), pero el save deja explícito que aquí se persiste.
+        //    @Version en Partida: si llegan dos acciones a la vez sobre la misma partida,
+        //    la segunda falla con un conflicto en lugar de pisar los cambios de la primera.
+        partida.setMovimientos(partida.getMovimientos() + 1);
+        partida.setTablero(tableroConverter.aJson(tablero));
+        partida = partidaRepository.save(partida);
+
+        return PartidaResponse.desde(partida, tablero);
+    }
+
+    // APERTURA EN CADENA (flood fill).
+    // Revela la casilla indicada; si tiene 0 minas alrededor, revela también sus vecinas,
+    // y repite con cada vecina que también tenga 0. Las casillas con número (1-8) se revelan
+    // pero NO siguen la cadena. Las casillas con bandera no se abren automáticamente.
+    //
+    // Se usa una cola (búsqueda en anchura) en vez de recursión, así un tablero grande
+    // no puede provocar StackOverflowError.
+    //
+    // Es pública porque no depende de la base de datos: la prueba del paso 6 la llama
+    // directamente con un tablero armado a mano.
+    public void abrirEnCadena(Tablero tablero, int filaInicial, int columnaInicial) {
+        Deque<int[]> pendientes = new ArrayDeque<>();
+        pendientes.add(new int[]{filaInicial, columnaInicial});
+
+        while (!pendientes.isEmpty()) {
+            int[] casilla = pendientes.poll();
+            int fila = casilla[0];
+            int columna = casilla[1];
+
+            // Saltar lo que no se debe abrir: fuera del tablero, ya abierta, con bandera o mina.
+            if (!tablero.dentroDelTablero(fila, columna)
+                    || tablero.estaRevelada(fila, columna)
+                    || tablero.tieneBandera(fila, columna)
+                    || tablero.esMina(fila, columna)) {
+                continue;
+            }
+
+            tablero.revelar(fila, columna);
+
+            // Solo las casillas vacías (0) propagan la cadena a sus 8 vecinas.
+            if (tablero.minasAdyacentes(fila, columna) == 0) {
+                for (int df = -1; df <= 1; df++) {
+                    for (int dc = -1; dc <= 1; dc++) {
+                        if (df != 0 || dc != 0) {
+                            pendientes.add(new int[]{fila + df, columna + dc});
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Cierra la partida. El tiempo se mide en el servidor: desde fechaInicio hasta ahora.
+    // Victoria: tiempo_ms y estrellas (entra al ranking).
+    // Derrota:  tiempo_ms = NULL y 0 estrellas (vw_ranking la excluye por "tiempo_ms IS NOT NULL").
+    private void terminarPartida(Partida partida, boolean gano) {
+        LocalDateTime fin = LocalDateTime.now();
+        partida.setEstado(enums.EstadoPartida.TERMINADA);
+        partida.setFechaFin(fin);
+
+        if (gano) {
+            long tiempoMs = Duration.between(partida.getFechaInicio(), fin).toMillis();
+            partida.setTiempoMs((int) tiempoMs);
+            partida.setEstrellas(calcularEstrellas(partida.getNivel(), tiempoMs));
+        } else {
+            partida.setTiempoMs(null);
+            partida.setEstrellas(0);
+        }
+    }
+
+    // Regla propia (el enunciado solo pide 0 a 3): según un tiempo objetivo por nivel.
+    // 3 estrellas dentro del objetivo, 2 hasta el doble, 1 si tardó más.
+    private int calcularEstrellas(enums.Nivel nivel, long tiempoMs) {
+        long objetivoMs = switch (nivel) {
+            case PRINCIPIANTE -> 60_000;     // 1 minuto
+            case INTERMEDIO -> 240_000;      // 4 minutos
+            case EXPERTO -> 600_000;         // 10 minutos
+        };
+        if (tiempoMs <= objetivoMs) return 3;
+        if (tiempoMs <= objetivoMs * 2) return 2;
+        return 1;
     }
 
     private Usuario buscarUsuario(String nombreUsuario) {

@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -46,6 +47,16 @@ public class ManejadorGlobalExcepciones {
 
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", "Los datos entran en conflicto con un registro existente."));
+    }
+
+    // Dos acciones simultáneas sobre la misma partida: @Version detecta que la fila cambió
+    // entre la lectura y el guardado, y la segunda se rechaza en vez de pisar a la primera.
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class) // → 409
+    public ResponseEntity<Map<String, String>> manejarConcurrencia(ObjectOptimisticLockingFailureException ex) {
+        log.warn("Conflicto de versión: {}", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "La partida cambió mientras se procesaba la acción. Intenta de nuevo."));
     }
 
     @ExceptionHandler(Exception.class) // → 500
