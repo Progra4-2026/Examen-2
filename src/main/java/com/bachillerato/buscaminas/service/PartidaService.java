@@ -1,6 +1,7 @@
 package com.bachillerato.buscaminas.service;
 
 import com.bachillerato.buscaminas.dto.PartidaDtos.AccionRequest;
+import com.bachillerato.buscaminas.dto.PartidaDtos.HistorialItemResponse;
 import com.bachillerato.buscaminas.dto.PartidaDtos.PartidaResponse;
 import com.bachillerato.buscaminas.excepcion.ApiException;
 import com.bachillerato.buscaminas.model.Tablero;
@@ -229,6 +230,30 @@ public class PartidaService {
         Partida partida = buscarPartidaPropia(nombreUsuario, idPartida);
         Tablero tablero = tableroConverter.desdeJson(partida.getTablero());
         return PartidaResponse.desde(partida, tablero);
+    }
+
+    // GET /api/usuarios/{id}/partidas
+    // Historial del usuario, de la más reciente a la más vieja. Opcionalmente filtrado por nivel.
+    // Solo se puede consultar el historial propio: si el id no es el de la sesión -> 403.
+    @Transactional(readOnly = true)
+    public List<HistorialItemResponse> obtenerHistorial(String nombreUsuario, Long idUsuario,
+                                                        enums.Nivel nivel) {
+        Usuario usuario = buscarUsuario(nombreUsuario);
+
+        if (!usuario.getIdUsuario().equals(idUsuario)) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "No puedes consultar el historial de otro usuario.");
+        }
+
+        List<Partida> partidas = (nivel == null)
+                ? partidaRepository.historialPartidas(idUsuario)
+                : partidaRepository.historialPartidasPorNivel(idUsuario, nivel);
+
+        // El DTO no toca partida.getUsuario() (relación LAZY), así que no se dispara
+        // una consulta extra por cada partida (se evita el problema N+1).
+        return partidas.stream()
+                .map(HistorialItemResponse::desde)
+                .toList();
     }
 
     // Busca una partida y verifica que sea del usuario de la sesión.

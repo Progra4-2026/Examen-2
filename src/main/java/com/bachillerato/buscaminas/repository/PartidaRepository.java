@@ -14,24 +14,26 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
 
     // Historial completo de un usuario.
     // Usa: idUsuario (dueño de las partidas).
-    // Devuelve: todas sus partidas, ordenadas por fechaInicio de la más reciente a la más vieja.
+    // Devuelve: todas sus partidas, ordenadas por fechaInicio de la más reciente a la más vieja
+    // (si dos empiezan en el mismo segundo, desempata el id: el mayor es el más nuevo).
     @Query("""
             SELECT p
             FROM Partida p
             WHERE p.usuario.idUsuario = :idUsuario
-            ORDER BY p.fechaInicio DESC
+            ORDER BY p.fechaInicio DESC, p.idPartida DESC
             """)
     List<Partida> historialPartidas(Long idUsuario);
 
     // Historial de un usuario en un solo nivel.
     // Usa: idUsuario (dueño) y nivel (PRINCIPIANTE, INTERMEDIO o EXPERTO).
-    // Devuelve: sus partidas de ese nivel, ordenadas por fechaInicio de la más reciente a la más vieja.
+    // Devuelve: sus partidas de ese nivel, ordenadas por fechaInicio de la más reciente a la más vieja
+    // (si dos empiezan en el mismo segundo, desempata el id: el mayor es el más nuevo).
     @Query("""
             SELECT p
             FROM Partida p
             WHERE p.usuario.idUsuario = :idUsuario
               AND p.nivel = :nivel    
-            ORDER BY p.fechaInicio DESC
+            ORDER BY p.fechaInicio DESC, p.idPartida DESC
             """)
     List<Partida> historialPartidasPorNivel(Long idUsuario, enums.Nivel nivel);
 
@@ -43,7 +45,7 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
             FROM Partida p
             WHERE p.usuario.idUsuario = :idUsuario
               AND p.estado = :estado
-            ORDER BY p.fechaInicio DESC
+            ORDER BY p.fechaInicio DESC, p.idPartida DESC
             """)
     Optional<Partida> ultimaPartidaPorEstado(Long idUsuario, enums.EstadoPartida estado, Limit limit);
 
