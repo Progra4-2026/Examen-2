@@ -82,4 +82,24 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
             ORDER BY p.tiempoMs ASC
             """)
     List<Partida> top10PartidasPorTiempoMs(enums.Nivel nivel, enums.EstadoPartida estado, Limit limit);
+
+    // Ranking global: el MEJOR tiempo (MIN) de cada jugador en cada nivel (GROUP BY).
+    // Consulta NATIVA (SQL de MySQL, no JPQL): trabaja con nombres de tablas y columnas reales.
+    // Es la misma lógica de la vista vw_ranking de minas.sql, pero sin el email (dato personal).
+    // Solo cuenta victorias: TERMINADA con tiempo_ms (las derrotas guardan tiempo_ms NULL).
+    // Devuelve: una fila por (jugador, nivel), ordenadas por nivel y del más rápido al más lento.
+    @Query(value = """
+            SELECT u.id                AS usuarioId,
+                   u.nombre_usuario    AS nombreUsuario,
+                   p.nivel             AS nivel,
+                   MIN(p.tiempo_ms)    AS mejorTiempoMs,
+                   COUNT(*)            AS partidasGanadas
+            FROM partida p
+            JOIN usuario u ON u.id = p.usuario_id
+            WHERE p.estado = 'TERMINADA'
+              AND p.tiempo_ms IS NOT NULL
+            GROUP BY u.id, u.nombre_usuario, p.nivel
+            ORDER BY p.nivel, mejorTiempoMs ASC, partidasGanadas DESC, u.nombre_usuario
+            """, nativeQuery = true)
+    List<RankingFila> ranking();
 }
