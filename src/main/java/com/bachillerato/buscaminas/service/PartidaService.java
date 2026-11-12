@@ -9,6 +9,7 @@ import com.bachillerato.buscaminas.model.enums;
 import com.bachillerato.buscaminas.repository.PartidaRepository;
 import com.bachillerato.buscaminas.repository.UsuarioRepository;
 
+import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +68,27 @@ public class PartidaService {
 
         // 5. Responder con el tablero FILTRADO (sin minas).
         return PartidaResponse.desde(partida, tablero);
+    }
+
+    // GET /api/partidas/actual
+    // Devuelve la partida EN_CURSO del usuario (por ejemplo, para retomarla al recargar la página).
+    @Transactional(readOnly = true)
+    public PartidaResponse obtenerPartidaActual(String nombreUsuario) {
+        Usuario usuario = buscarUsuario(nombreUsuario);
+
+        Partida partida = partidaRepository.ultimaPartidaPorEstado(usuario.getIdUsuario(),
+                        enums.EstadoPartida.EN_CURSO, Limit.of(1))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                        "No tienes una partida en curso."));
+
+        Tablero tablero = tableroConverter.desdeJson(partida.getTablero());
+        return PartidaResponse.desde(partida, tablero);
+    }
+
+    private Usuario buscarUsuario(String nombreUsuario) {
+        return usuarioRepository.buscarPorNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED,
+                        "La sesión no corresponde a un usuario válido."));
     }
 
     // Coloca las minas sin repetir posiciones:
