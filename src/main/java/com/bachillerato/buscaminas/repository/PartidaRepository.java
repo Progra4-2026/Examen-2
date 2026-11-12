@@ -14,24 +14,26 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
 
     // Historial completo de un usuario.
     // Usa: idUsuario (dueño de las partidas).
-    // Devuelve: todas sus partidas, ordenadas por fechaInicio de la más reciente a la más vieja.
+    // Devuelve: todas sus partidas, ordenadas por fechaInicio de la más reciente a la más vieja
+    // (si dos empiezan en el mismo segundo, desempata el id: el mayor es el más nuevo).
     @Query("""
             SELECT p
             FROM Partida p
             WHERE p.usuario.idUsuario = :idUsuario
-            ORDER BY p.fechaInicio DESC
+            ORDER BY p.fechaInicio DESC, p.idPartida DESC
             """)
     List<Partida> historialPartidas(Long idUsuario);
 
     // Historial de un usuario en un solo nivel.
     // Usa: idUsuario (dueño) y nivel (PRINCIPIANTE, INTERMEDIO o EXPERTO).
-    // Devuelve: sus partidas de ese nivel, ordenadas por fechaInicio de la más reciente a la más vieja.
+    // Devuelve: sus partidas de ese nivel, ordenadas por fechaInicio de la más reciente a la más vieja
+    // (si dos empiezan en el mismo segundo, desempata el id: el mayor es el más nuevo).
     @Query("""
             SELECT p
             FROM Partida p
             WHERE p.usuario.idUsuario = :idUsuario
               AND p.nivel = :nivel    
-            ORDER BY p.fechaInicio DESC
+            ORDER BY p.fechaInicio DESC, p.idPartida DESC
             """)
     List<Partida> historialPartidasPorNivel(Long idUsuario, enums.Nivel nivel);
 
@@ -43,7 +45,7 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
             FROM Partida p
             WHERE p.usuario.idUsuario = :idUsuario
               AND p.estado = :estado
-            ORDER BY p.fechaInicio DESC
+            ORDER BY p.fechaInicio DESC, p.idPartida DESC
             """)
     Optional<Partida> ultimaPartidaPorEstado(Long idUsuario, enums.EstadoPartida estado, Limit limit);
 
@@ -80,4 +82,24 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
             ORDER BY p.tiempoMs ASC
             """)
     List<Partida> top10PartidasPorTiempoMs(enums.Nivel nivel, enums.EstadoPartida estado, Limit limit);
+
+    // Ranking global: el MEJOR tiempo (MIN) de cada jugador en cada nivel (GROUP BY).
+    // Consulta NATIVA (SQL de MySQL, no JPQL): trabaja con nombres de tablas y columnas reales.
+    // Es la misma lógica de la vista vw_ranking de minas.sql, pero sin el email (dato personal).
+    // Solo cuenta victorias: TERMINADA con tiempo_ms (las derrotas guardan tiempo_ms NULL).
+    // Devuelve: una fila por (jugador, nivel), ordenadas por nivel y del más rápido al más lento.
+    @Query(value = """
+            SELECT u.id                AS usuarioId,
+                   u.nombre_usuario    AS nombreUsuario,
+                   p.nivel             AS nivel,
+                   MIN(p.tiempo_ms)    AS mejorTiempoMs,
+                   COUNT(*)            AS partidasGanadas
+            FROM partida p
+            JOIN usuario u ON u.id = p.usuario_id
+            WHERE p.estado = 'TERMINADA'
+              AND p.tiempo_ms IS NOT NULL
+            GROUP BY u.id, u.nombre_usuario, p.nivel
+            ORDER BY p.nivel, mejorTiempoMs ASC, partidasGanadas DESC, u.nombre_usuario
+            """, nativeQuery = true)
+    List<RankingFila> ranking();
 }
