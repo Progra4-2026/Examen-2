@@ -1,5 +1,6 @@
 package com.bachillerato.buscaminas.controller;
 
+import com.bachillerato.buscaminas.dto.PartidaDtos.AccionRequest;
 import com.bachillerato.buscaminas.dto.PartidaDtos.CrearPartidaRequest;
 import com.bachillerato.buscaminas.dto.PartidaDtos.PartidaResponse;
 import com.bachillerato.buscaminas.service.PartidaService;
@@ -35,5 +36,15 @@ public class PartidaController {
     @GetMapping("/actual")
     public PartidaResponse actual(Authentication authentication) {
         return partidaService.obtenerPartidaActual(authentication.getName());
+    }
+
+    // Procesa una acción del jugador: revelar una casilla o alternar una bandera.
+    // 200 con el estado actualizado; 400 acción inválida o partida no activa;
+    // 403 partida de otro usuario; 404 partida inexistente.
+    @PostMapping("/{id}/acciones")
+    public PartidaResponse accion(@PathVariable Long id,
+                                  @Valid @RequestBody AccionRequest request,
+                                  Authentication authentication) {
+        return partidaService.procesarAccion(authentication.getName(), id, request);
     }
 }
