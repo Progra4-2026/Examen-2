@@ -2,7 +2,9 @@ package com.bachillerato.buscaminas.repository;
 
 import com.bachillerato.buscaminas.model.entity.Usuario;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
@@ -48,4 +50,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             WHERE u.email = :email
             """)
     boolean existeEmail(String email);
+
+    // Crear partida: carga al usuario BLOQUEANDO su fila (SELECT ... FOR UPDATE) hasta que
+    // termine la transacción. Si llegan dos peticiones a la vez para el mismo usuario, la
+    // segunda espera a que la primera termine, y así nunca se crean dos partidas EN_CURSO.
+    // Usa: nombreUsuario (el de la sesión).
+    // Devuelve: el usuario bloqueado, o vacío si no existe.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT u
+            FROM Usuario u
+            WHERE u.nombreUsuario = :nombreUsuario
+            """)
+    Optional<Usuario> bloquearPorNombreUsuario(String nombreUsuario);
 }
