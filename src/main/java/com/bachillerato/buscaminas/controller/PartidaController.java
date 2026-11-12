@@ -29,4 +29,11 @@ public class PartidaController {
         PartidaResponse partida = partidaService.crearPartida(authentication.getName(), request.nivel());
         return ResponseEntity.status(HttpStatus.CREATED).body(partida);
     }
+
+    // Devuelve la partida en curso del usuario de la sesión.
+    // 200 con el tablero filtrado; 404 si no tiene ninguna en curso.
+    @GetMapping("/actual")
+    public PartidaResponse actual(Authentication authentication) {
+        return partidaService.obtenerPartidaActual(authentication.getName());
+    }
 }
