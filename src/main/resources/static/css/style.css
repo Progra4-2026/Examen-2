@@ -168,3 +168,311 @@ body {
 .auth-enlace:hover {
     text-decoration: underline;
 }
+
+/* ========== Aplicación autenticada ========== */
+.app-shell {
+    min-height: 100vh;
+}
+
+.app-barra {
+    min-height: 64px;
+    padding: 10px 24px;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borde);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.app-marca {
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.app-nav {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.app-nav button,
+.nav-salir {
+    border: 0;
+    background: transparent;
+    color: var(--texto-suave);
+    font: inherit;
+    padding: 9px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.app-nav button:hover,
+.app-nav .nav-activo {
+    background: var(--fondo);
+    color: var(--primario);
+    font-weight: 600;
+}
+
+.app-usuario {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.nav-salir {
+    color: var(--error-texto);
+}
+
+.app-contenido {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+}
+
+.juego-panel,
+.contenido-panel {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: 24px;
+}
+
+.seccion-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.seccion-titulo h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+}
+
+.seccion-titulo p {
+    margin: 0;
+    color: var(--texto-suave);
+}
+
+.juego-controles {
+    display: flex;
+    gap: 8px;
+}
+
+.juego-controles select {
+    border: 1px solid var(--borde);
+    border-radius: 7px;
+    padding: 9px;
+    background: var(--superficie);
+    color: var(--texto);
+}
+
+.boton-pequeno {
+    margin-top: 0;
+    padding: 9px 13px;
+}
+
+.estado-vacio {
+    padding: 28px;
+    text-align: center;
+    color: var(--texto-suave);
+    background: var(--fondo);
+    border-radius: 8px;
+}
+
+.partida-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 12px;
+    background: var(--fondo);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.instrucciones {
+    color: var(--texto-suave);
+    font-size: 13px;
+    text-align: center;
+}
+
+.tablero {
+    display: grid;
+    grid-template-columns: repeat(var(--columnas), minmax(20px, 42px));
+    gap: 3px;
+    justify-content: center;
+    margin: 20px auto 4px;
+    overflow-x: auto;
+}
+
+.casilla {
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid var(--borde);
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: clamp(11px, 2vw, 16px);
+    cursor: pointer;
+}
+
+.casilla.oculta {
+    background: var(--primario);
+    border-color: var(--primario-hover);
+    color: #fff;
+}
+
+.casilla.oculta:hover {
+    background: var(--primario-hover);
+}
+
+.casilla.bandera {
+    background: #ffe8a3;
+    color: #8a5700;
+}
+
+.casilla.abierta {
+    background: var(--fondo);
+    cursor: default;
+}
+
+.casilla.mina {
+    background: var(--error-fondo);
+}
+
+.numero-1 { color: #2563eb; }
+.numero-2 { color: #15803d; }
+.numero-3 { color: #dc2626; }
+.numero-4, .numero-5, .numero-6, .numero-7, .numero-8 { color: #7c3aed; }
+
+.resultado-ok { color: #15803d; }
+.resultado-error { color: var(--error-texto); }
+
+.datos-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.datos-tabla th,
+.datos-tabla td {
+    padding: 11px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--borde);
+}
+
+.datos-tabla th {
+    color: var(--texto-suave);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.tabla-scroll {
+    overflow-x: auto;
+}
+
+.tabla-enlace {
+    color: var(--primario);
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.etiqueta {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.etiqueta-ok { background: #dcfce7; color: #166534; }
+.etiqueta-error { background: var(--error-fondo); color: var(--error-texto); }
+
+.ranking-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+.ranking-card {
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.ranking-card h2 {
+    margin: 0 0 12px;
+    font-size: 17px;
+}
+
+.fila-usuario {
+    background: #eef5ff;
+    font-weight: 600;
+}
+
+.mi-posicion,
+.texto-suave {
+    color: var(--texto-suave);
+    font-size: 14px;
+}
+
+.app-alerta {
+    margin-bottom: 18px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    background: var(--error-fondo);
+    color: var(--error-texto);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-alerta button {
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+@media (max-width: 680px) {
+    .app-barra {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 16px;
+    }
+
+    .app-nav {
+        order: 3;
+        flex-basis: 100%;
+        justify-content: space-between;
+    }
+
+    .app-usuario {
+        margin-left: auto;
+    }
+
+    .seccion-titulo {
+        flex-direction: column;
+    }
+
+    .juego-controles {
+        width: 100%;
+    }
+
+    .juego-controles select,
+    .juego-controles button {
+        flex: 1;
+    }
+
+    .juego-panel,
+    .contenido-panel {
+        padding: 16px;
+    }
+}
